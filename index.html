@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nearby Restaurants Finder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f9fc;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .restaurant-card {
+      margin: 15px 0;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+    .restaurant-card h3 {
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .restaurant-card p {
+      margin: 5px 0;
+      color: #666;
+    }
+    .restaurant-card a {
+      margin-top: 10px;
+      color: #007bff;
+      text-decoration: none;
+    }
+    .restaurant-card a:hover {
+      text-decoration: underline;
+    }
+    pre {
+      background-color: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>📍 Nearby Places Finder</h1>
+        <label for="location">Location</label>
+        <input type="text" id="location" placeholder="Enter a location (e.g., Bengaluru)"/>
+    
+        <label for="type">Type of Place</label>
+        <select id="type">
+          <option value="restaurant" selected>Restaurants</option>
+          <option value="hotel">Hotels</option>
+          <option value="gym">Gyms</option>
+          <option value="cafe">Cafes</option>
+          <option value="park">Parks</option>
+          <option value="hospital">Hospitals</option>
+          </select>
+    
+        <button onclick="getNearbyPlaces()">Find Places</button>
+    
+        <div id="results"></div>
+        <div id="rawJson"></div>
+      </div>
+    
+      <script>
+        async function getNearbyPlaces() {
+          const location = document.getElementById("location").value.trim();
+          const type = document.getElementById("type").value;
+          const resultsDiv = document.getElementById("results");
+          const rawJsonDiv = document.getElementById("rawJson");
+          resultsDiv.innerHTML = "⏳ Loading...";
+          rawJsonDiv.innerHTML = ""; // Clear previous JSON
+    
+          try {
+            const response = await fetch("http://localhost:5000/api/nearby-places", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ location, type }) // Send the selected type to the backend
+            });
+    
+            const data = await response.json();
+    
+            // Display raw JSON
+            rawJsonDiv.innerHTML = `<h2>Raw JSON Response:</h2><pre>${JSON.stringify(data, null, 2)}</pre>`;
+    
+            // Check if the response contains an error
+            if (data.error) {
+              resultsDiv.innerHTML = `⚠️ Error: ${data.error}`;
+              return;
+            }
+    
+            const places = data.places || [];
+    
+            if (!places.length) {
+              resultsDiv.innerHTML = `❌ No ${type} found near ${location}.`;
+              return;
+            }
+    
+            resultsDiv.innerHTML = `<h2>📍 Found ${places.length} ${type} near ${location}:</h2>`;
+            places.forEach(place => {
+              const el = document.createElement("div");
+              el.className = "restaurant-card"; // Reusing the restaurant card style for now
+              let detailsHTML = `
+                <h3>${place.name}</h3>
+                ${place.rating ? `<p><strong>⭐ Rating:</strong> ${place.rating}</p>` : ''}
+                ${place.distance ? `<p><strong>📍 Distance:</strong> ${place.distance} km</p>` : ''}
+                ${place.review_summary ? `<p><strong>📝 Summary:</strong> ${place.review_summary}</p>` : ''}
+                ${place.best_dishes ? `<p><strong>🍽️ Best Dishes:</strong> ${place.best_dishes.join(", ")}</p>` : ''}
+                ${place.cuisine ? `<p><strong>🍜 Cuisine:</strong> ${place.cuisine}</p>` : ''}
+                ${place.opening_hours ? `<p><strong>⏰ Opening Hours:</strong> ${place.opening_hours}</p>` : ''}
+                ${place.amenities ? `<p><strong>✨ Amenities:</strong> ${place.amenities.join(", ")}</p>` : ''}
+                ${place.facility_type ? `<p><strong>🏢 Facility Type:</strong> ${place.facility_type}</p>` : ''}
+                `;
+              el.innerHTML = detailsHTML;
+              resultsDiv.appendChild(el);
+            });
+    
+          } catch (err) {
+            console.error(err);
+            resultsDiv.innerHTML = "⚠️ Error fetching data. Check console for details.";
+          }
+        }
+      </script>
+    
+    </body>
+    </html>
