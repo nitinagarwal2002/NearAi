@@ -109,7 +109,7 @@
           rawJsonDiv.innerHTML = ""; // Clear previous JSON
     
           try {
-            const response = await fetch("http://localhost:5000/api/nearby-places", {
+            const response = await fetch("https:/nearai.onrender.com/api/nearby-places", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ location, type }) // Send the selected type to the backend
@@ -117,8 +117,6 @@
     
             const data = await response.json();
     
-            // Display raw JSON
-            rawJsonDiv.innerHTML = `<h2>Raw JSON Response:</h2><pre>${JSON.stringify(data, null, 2)}</pre>`;
     
             // Check if the response contains an error
             if (data.error) {
